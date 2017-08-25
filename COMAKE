@@ -1,0 +1,56 @@
+#edit-mode: -*- python -*-
+#coding:gbk
+
+#工作路径.
+WORKROOT('../../../')
+
+#使用硬链接copy.
+CopyUsingHardLink(True)
+
+#C预处理器参数
+CPPFLAGS('-D_GNU_SOURCE -D__STDC_LIMIT_MACROS -DVERSION=\"1.9.8.7\"')
+#为32位目标编译指定额外的预处理参数
+#CPPFLAGS_32('-D_XOPEN_SOURE=500')
+
+#C编译参数.
+CFLAGS('-g -pipe -W -Wall -fPIC')
+#C++编译参数.
+CXXFLAGS('-g -pipe -W -Wall -fPIC')
+#IDL编译参数
+IDLFLAGS('--compack')
+#UBRPC编译参数
+UBRPCFLAGS('--compack')
+#头文件路径.
+INCPATHS('. ./dict_parser ./output/include')
+
+#使用库
+#LIBS('./libC++-id-9933.a')
+#链接参数.
+LDFLAGS('-lpthread -lcrypto -lrt')
+#依赖模块
+CONFIGS('lib2-64/ullib')
+CONFIGS('third-64/gtest@gtest_1-4-0-500_PD_BL')
+#为32位/64位指定不同的依赖路径.
+#CONFIGS_32('lib2/ullib')
+#CONFIGS_64('lib2-64/ullib')
+user_sources=GLOB('dict_parser/*.cpp ./*.cpp')
+user_headers=GLOB('dict_parser/*.h ./*.h')
+#可执行文件
+Application('dict_parser_tool',Sources(user_sources))
+#静态库,用于 UT 用例联编
+StaticLibrary('dict_parser', Sources(user_sources,
+CppFlags('-D_UNIT_TEST_ -Dprivate=public -Dprotected=public')),HeaderFiles(user_headers))
+
+TARGET("output")
+#编译 UT 用例
+ut_sources=glob.glob('./test/*.cpp')
+import string
+ut_target_list = []
+for test in ut_sources:
+    ut_target = os.path.splitext(test)[0]
+    Application(ut_target,Sources(test,
+    CppFlags('-D__INLINE__="" -Dprivate=public -Dprotected=public -D__64BIT__')),
+    HeaderFiles(user_headers),
+    Libraries('./output/lib/libdict_parser.a'),
+    LinkFlags('-lpthread -lcrypto -lrt'))
+    ut_target_list.append(ut_target)
